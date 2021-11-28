@@ -1,0 +1,62 @@
+---
+title: "Linear_Analysis"
+author: "Allhad Abhyankaar"
+date: "11/28/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Initial Analysis after removal of the redundant variables
+```{r}
+summary_nhl<-read.csv("Summary-Table_1.csv")
+colnames(summary_nhl)
+```
+We know the interacting variables are
+
+1) GF.GP -> GF 5v5, GFinP1,GFinP2 
+2) GA.GP -> GA.GP.1,GA in P2
+3) shot.GP ->SAT,
+4) FOW -> EVFOW, OZFOW,NZFOW,DZFOW 
+5) EVFOW -> OZFOW,NZFOW,DZFOW
+6) GA.GP.1->GA in P2
+7) GF  5v5 -> GF in P1
+8) Wins.Outshoot.Opp ->Win..3.Goal.Game
+9) Pen.Taken.60->Minor
+
+and we cannot use X5V5.TOI.GP
+
+
+The initial model is
+
+```{r}
+init_model<-lm(P~GF.GP+GA.GP+PP.+PK.+SA.GP+FOW.++PP.FOW.+SH.FOW.+GF.5v5+Hits.60+BkS.60+            GvA.60+TkA.60+GA.in.P1+Win..Lead.1P+Win..Trail.1P+Win..Trail.2P+Wins.Outshoot.Opp+Pen.Drawn.60+Pen.Taken.60+Major+S.+S..Tip+Win..1.Goal.Game+Win..2.Goal.Game,data=summary_nhl)
+summary(init_model)
+```
+the $R_{adj}^2$ = 0.9745, lets see the stepwise regression model
+
+```{r}
+library(olsrr)
+nhlforward_model<-ols_step_forward_p(init_model,pent=0.05, details=TRUE)
+```
+
+Reduced model will be
+
+```{r}
+red_model<-lm(P~Wins.Outshoot.Opp+Win..Trail.1P+GF.GP+GA.GP+Win..1.Goal.Game+Win..2.Goal.Game+PP.FOW.+FOW.,data=summary_nhl)
+summary(red_model)
+````
+remove wins.outshoot.opp
+
+```{r}
+red_model<-lm(P~Win..Trail.1P+GF.GP+GA.GP+Win..1.Goal.Game+Win..2.Goal.Game+PP.FOW.+FOW.,data=summary_nhl)
+summary(red_model)
+````
+```{r}
+red_model<-lm(P~(Win..Trail.1P+GF.GP+GA.GP+Win..1.Goal.Game+Win..2.Goal.Game+PP.FOW.+FOW.)^2,data=summary_nhl)
+summary(red_model)
+````
+
+
