@@ -1,0 +1,689 @@
+---
+title: "DATA 603 Final Project: Multiple Regression Analysis"
+subtitle: "Prediction of NHL Team Points Based on Multiple 2018 Team Statistics" 
+author: 
+  - Aldebaran Saldaña - 30161039
+  - Allhad Abhyankar - 30163003
+  - Deshant Sachdeva - 30150728
+  - Jacques Botha - 30060966
+  - Jeremy Reid - 00281163
+  - Wonje Choi - 30016397
+date: "12/07/2021"
+output:
+  pdf_document: default
+---
+
+\newpage
+
+
+
+# 1.0 Introduction
+
+The National Hockey League (NHL) is a professional ice hockey league based out of North America. The league was established back in 1917 with only 4 teams, all of which were Canadian. As the sport gained popularity and new markets were established the total number of teams in the league grew. As of today, the NHL is composed of 32 teams; 7 of which are Canadian and 25 are American. 
+
+A typical NHL season is made up of the preseason or exhibition, the regular season and the playoffs or more commonly known as the “Stanley Cup Playoffs”. For our project we focused our analysis on the regular season data. This was done for a variety of reasons; the data set for the regular season consisted of 82 games, whereas the pre-season typically only includes 6-8 games. The pre-season would most likely not have enough data points to derive a model with any sort of significance. The pre-season has also historically been used by teams as an opportunity to “field” or trial players typically not on the team to see how they would perform, therefore these data points would not be representative of the team performance during the regular season. The playoff data was omitted in our analysis as only the top 16 performing teams during the regular season will qualify for the playoffs.
+
+The project objective was to analyze a number of the team statistics for a single season of data and 32 NHL teams, in order to derive the best possible model with respect to a teams performance for the NHL regular season. In deriving this model we investigated and confirmed that the modeled data satisfied the 4 assumption requirements of linear regression (linearity, homoscedasticity, normality and independence). If the model failed to meet any of these assumptions the appropriate test statistics to best analyze and interpret the data would be used to justify any required transformations.
+
+The metrics used to evaluate which model best predicts the dependent variable (points accumulated during the 2018 season) would primarily depend on the adjusted R-squared and Root Mean Square Error (RMSE). It was expected that investigation would include independent variables determined to be the “best predictors” (highest significance) with respect to team success as measured by points. We will also investigate and determine interaction and higher order relationships between significant predictors.
+
+The final model will then be validated by using previous regular season statistics in order to compare the expected team performance to the actual team performance. Lastly we will use our model in order to predict the expected team performance of the ongoing 2021/22 NHL season.
+
+The subject matter experts in our group felt that the most significant independent variables for analysis would be the following; GF/GP, GA/GP, Shots/GP, S%, GF 5v5, GA 5v5 and Win % 1 Goal Game. Since teams earn points by winning hockey games, that is to say teams win games by scoring more goals then their opponent, one would expect a team with a higher mean GF/GP (goals for or goals “scored” per game played) and a lower mean GA/GP (goals against or goals scored by opponents per game played) will have significant influence on a teams performance. The Shots/GP dependent variable represents the mean number of shots a team accumulates in a single game. Since the opportunities to score goals comes directly from “shooting” one would also expect a team with a higher mean Shots/GP to have an influence on a teams performance, though just because a team has many shots does not necessarily translate into goals or performance. S% represents the number of goals scored divided by total shots taken. This variable should be more indicative of team success as it reflects a teams ability to convert opportunities to score into goals. A team with a higher S% can generally be expected to score more goals and win more games. The GF 5v5 and GA 5v5 variables represent a team's ability to score goals and have goals scored against them when playing at “even strength” that is 5 players vs 5 opposing players. Since the majority of a hockey game is played “even strength” one would also expect these variables to have a significant influence. A team that can score more goals and have less goals scored against them while playing at “even strength” is expected to perform better than a team which does not. Lastly Win % 1 Goal Game is expected to be included in the final model as the National Hockey League is a professional hockey league that is extremely competitive, a large percentage of game outcomes are decided by 1 goals. A team that has a higher win percentage in these competitive games is expected to perform better than a team that can not.
+
+\newpage
+
+# 2.0 Methods
+## 2.1 Data Source
+
+All data obtained for the project is publicly available by the NHL on their website “Team” statistics page (http://www.nhl.com/stats/teams). Although numerous NHL statistics sources exist, the NHL.com data is readily available in CSV format, includes numerous variables and considered most credible by the project team. While, third-party non-NHL data sources are plentiful, many of these sites include derived composite statistics that would have required additional time for understanding and verification by the project team.
+
+To develop a model for prediction of team performance, it was determined that a single season of data would be used with each team treated as a single experimental unit. The project team determined that use of multiple seasons may result in confounding time series effects. These include variable amounts of team compositional changes due to player movement and rule or other changes that have occurred over time in the NHL. Such time series effects of NHL data would be expected to impact the usefulness of various variables over time unpredictably. While the project team wanted to use the most recent season, in order to have a contemporary model that would be useful in prediction of the current NHL season, due to the pandemic the 2019/20 and 2020/21 seasons were shortened below the typical 82 games. Therefore, the 2018 season was used in model development as it was the most recent full 82 game season.
+
+## 2.2 Variables
+
+The dependent variable selected as measure of NHL team success was points accumulated over the 82 game season (‘P’). Points in the NHL standings are awarded based on game results including 2 points for a win or overtime win, 1 point for an overtime loss and 0 points for a loss in regulation time. ‘Points’ was selected as a dependent indicator of success over number of ‘Wins’ because success in the NHL includes matching an opposing team in regulation time and therefore a point is awarded for overtime losses.
+
+Thirty-eight potential predictor variables were selected from a much larger list of available variables from the NHL. These 38 variables were selected using domain expertise to include those expected to contribute to success and while reducing multicollinearity by excluding variables that were directly related (e.g. shot attempts per game and total shots over the season). A full list and description of the 38 variables is included in the Appendix. All variables used were quantitative (i.e. no categorical variables were available on NHL.com). Each variable was either discrete counts of a game events (goal, shot, win etc.), or a percentage value (faceoff win %, powerplay %, win % etc.), or a time variable (measured in minutes). For explanatory purpose, variables selected were separated into the following categories: 
+
+Goals for and goals against variables:
+\begin{itemize}
+  \item Discrete events:
+  \item GF/GP, GA/GP, GF 5v5, GA 5v5, GF in P1, GA in P1, GF in P2, GA in P2 
+\end{itemize}
+Faceoff related variables:
+\begin{itemize}
+  \item Discrete events:
+  \item EV FO, PP FO, SH FO, OZ FO, NZ FO, DZ FO
+  \item Percentage:
+  \item FOW%
+\end{itemize}
+Power play and penalty killing variables:
+\begin{itemize}
+  \item Discrete events:
+  \item Pen Drawn/60, Pen Taken/60, Minor, Major,
+  \item Percentage:
+  \item PP%, PK%
+\end{itemize}
+Shot and shot attempt variables:
+\begin{itemize}
+  \item Discrete events:
+  \item Shots/GP, SA/GP,
+  \item Percentage:
+  \item SAT%, S%, S% Tip
+\end{itemize}
+Wins related to game-state:
+\begin{itemize}
+  \item Discrete events:
+  \item Wins Outshoot Opp
+  \item Percentage:
+  \item Win% Lead P1, Win% Lead P2, Win% Trail P1, Win% Trail P2, Win% 1 Goal Game, Win% 2 Goal Game, Win% 3 Goal Game
+\end{itemize}
+Miscellaneous discrete events:
+\begin{itemize}
+  \item Hits per 60 minutes
+  \item Blocked shots per 60 minutes
+  \item Giveaways per 60 minutes
+  \item Takeaways per 60 minutes
+\end{itemize}
+
+## 2.3 Modeling Procedure
+
+The modeling procedure proceeded according to the following steps described in detail with Section 3.0 - Results: \
+1) Removal of redundant variables to reduce multicollinearity \
+2) Stepwise, forward and backward regression to further reduce the variable set \
+3) Test of significance for remaining variables \
+4) Diagnostics of the first order model \
+5) Exploration of interaction and higher order terms \
+6) Analysis of potential high leverage and influential data points \
+7) Attempted model augmentation with added categorical variables \
+8) Model validation and 2021/22 NHL season outcome prediction \
+
+\newpage
+
+# 3.0 Results
+
+## 3.1 First Order Model
+
+```{r setup, include=FALSE}
+library(olsrr)
+library(mctest)
+library(lmtest)
+library(leaps)
+library(GGally)
+library(Ecdat)
+library(MASS)
+library(ggplot2)
+library(dplyr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+A full model with all 38 parameters was used to begin developing the first order model. The output of this model indicated that multicollinearity existed between the independent variables. This was not a surprising result, based on the large number of independent variables.
+
+A Variance Inflation Factor (VIF) test was conducted to identify correlation between the independent variables and the strength of any correlation. VIF test for the full model showed infinite VIF scores for all parameters indicating that extreme multicollinearity existed between all 38 parameters. 
+```{r, echo=F}
+summary_nhl<-read.csv("Summary-Table_1.csv")
+init_model<-lm(P~GF.GP+GA.GP+PP.+PK.+SA.GP+FOW.++PP.FOW.+SH.FOW.+GF.5v5+Hits.60+BkS.60+            GvA.60+TkA.60+GA.in.P1+Win..Lead.1P+Win..Trail.1P+Win..Trail.2P+Wins.Outshoot.Opp+Pen.Drawn.60+Pen.Taken.60+Major+S.+S..Tip+Win..1.Goal.Game+Win..2.Goal.Game,data=summary_nhl)
+summary(init_model)
+imcdiag(mod=init_model, method = "VIF")
+```
+In order to determine the most highly correlated independent variables, pairwise correlation was used to identify highly correlated variables with $R^2 > 0.8$. Variables with high correlation identified with this test are listed in Table 1.
+
+Highly correlated variables identified via pairwise correlation test between all project independent variables:
+
+1) GF.GP -> GF 5v5, GFinP1,GFinP2 
+2) GA.GP -> GA.GP.1,GA in P2
+3) shot.GP ->SAT,
+4) FOW -> EVFOW, OZFOW,NZFOW,DZFOW 
+5) EVFOW -> OZFOW,NZFOW,DZFOW
+6) GA.GP.1->GA in P2
+7) GF  5v5 -> GF in P1
+8) Wins.Outshoot.Opp ->Win..3.Goal.Game
+9) Pen.Taken.60->Minor
+
+A reduced data set was created with redundant variables (as identified above via pairwise correlation) removed. The resulting initial model was:
+$$Y = 90.2317 + \beta_1GF.GP+\beta_2GA.GP+\beta_3PP.+\beta_4PK.+\beta_5SA.GP+\beta_6FOW.+\beta_7PP.FOW.+\beta_8SH.FOW.$$
+$$+\beta_9GF.5v5+\beta_{10}Hits.60+\beta_{11}BkS.60+\beta_{12}GvA.60+\beta_{13}TkA.60+\beta_{14}GA.in.P1+$$
+$$\beta_{15}Win..Lead.1P+\beta_{16}Win..Trail.1P+\beta_{17}Win..Trail.2P+\beta_{18}Wins.Outshoot.Opp+$$
+$$\beta_{19}Pen.Drawn.60+\beta_{20}Pen.Taken.60+\beta_{21}Major+\beta_{22}S.+\beta_{23}S..Tip+$$
+$$\beta_{24}Win..1.Goal.Game+\beta_{25}Win..2.Goal.Game$$
+ \
+To evaluate this initial model we performed a full model test with the following hypothesis ($\alpha = 0.05$): \
+$H_0: \beta_1 = \beta_2 =...= \beta_{25} = 0$ \
+$H_a:$ at least one of $\beta_i$ in not zero $(i = 1,2,...25)$ \
+
+To conduct the hypothesis test, an Analysis of Variance (ANOVA) was performed to compute the F-statistic by comparing the initial model to the null model.
+
+```{r, echo=F}
+test_model1<-lm(P~1, data=summary_nhl)
+anova(test_model1, init_model)
+```
+The ANOVA test result of the initial model vs the null model showed am $F_{cal} = 46.83$ with a p-value $= 0.0002 < \alpha = 0.05$. Therefore the null hypothesis was rejected and it was concluded that at least one of $\beta_i \neq 0$. Therefore, the initial model was used as the basis for further development of the project model. Additionally, the initial model had a high *Adjusted R Squared* value of *0.9745* and *Residual Standard error* value of *2.181*.
+
+As the next step to improve the first order model, stepwise selection was applied. A p-enter value of 0.05 was used to remove all non-significant independent variables.
+
+*Forward Selection Procedues* procedure result are provided below:
+
+```{r, echo=F}
+library(olsrr)
+nhlforward_model<-ols_step_forward_p(init_model, penter=0.05, details=FALSE)
+nhlforward_model
+```
+Backward elimination and full stepwise regression were used to verify that the above variables were optimal for continued model development.
+
+*Backward Elimination Procedure* results are provided below:
+
+```{r, echo=F}
+# First, we apply backward regression selection
+# To see which variables are the ones we should drop from the model.
+nhlback_model = ols_step_backward_p(init_model, prem=0.05, details = FALSE)
+nhlback_model
+```
+
+From the backward regression procedure results, the variable *Wins.Outshoot.Opp* is removed while having been included in the *Forward Selection Procedure*. From the initial reduced model, this varaible had a p-value of 0.6391 indicating that it is not significant. *Stepwise Regression Procedure* was also applied in order to determine whether to include or remove this independent variable. Results from the stepwise regression are provided below. P-remove and p-enter were set to $\alpha = 0.05$ for this procedure.
+
+```{r, echo=F}
+nhlstep_model = ols_step_both_p(init_model, prem=0.05, penter=0.05, details=F)
+nhlstep_model
+```
+
+From the results of this stepwise regression procedure, it was decided that *Wins.Outshoot.Opp*, as well as the variables *Win..Trail.1P*, *Pen.Taken.60*, *Win..2.Goal*.*Game, PP.FOW.*, *Pen.Taken.60* and *FOW* would be tested in the subsequent model iteration. This model was then tested.
+```{r, echo=F}
+red_model1 = lm(P~Wins.Outshoot.Opp+Win..Trail.1P+GF.GP+GA.GP+
+                Win..1.Goal.Game+Win..2.Goal.Game+Win..Trail.1P+PP.FOW.+FOW.+
+                 Win..Trail.2P+PK.+
+                 Pen.Taken.60,data=summary_nhl)
+summary(red_model1)
+```
+In order to remove variables from this reduced model, an individual coefficients test (t-test) was conducted. The hypothesis was: \
+$H_0: \beta_i = 0$ \
+$H_a: \beta_i \neq 0 (i = 1, 2,..., 11)$ \
+
+The results of this reduced model allowed us to reject the null hypothesis for *Win..Trail.1P* (p-val = 0.03239), *GF.GP* (2.89e-12), *GA.GP*(4.59e-12), *Win..1.Goal.Game*(3.40e-07), *Win..2.Goal.Game*(0.00286), *PP.FOW.* (0.00240) and *FOW.* (0.02191) as all had p-vales $< \alpha = 0.05$.
+
+```{r, echo=F}
+#reduced model with no "wins.outshoot.opp" independent variable
+red_model<-lm(P~Win..Trail.1P+GF.GP+GA.GP+Win..1.Goal.Game+Win..2.Goal.Game+
+                PP.FOW.+FOW.,data=summary_nhl)
+summary(red_model)
+```
+After removal of *Wins.Outshoot.Opp* the p-value for *Win..Trail.1P* was increased beyond the $\alpha = 0.05$ level (p-value = 0.0777). However, this independent variable is still very nearly significant and could be included if we increase our error tolerance (e.g. $1-\alpha = 0.9$). Domain expertise led to the final decision to include 'Win..Trail.1P' in the model as the ability for a team to come from behind is considered an important attribute in hockey that demonstrates resilience expected to increase chance of team success.
+
+Therefore the reduced version of our initial model for further development was:
+$$Y = 75.1639+\beta_1Win..Trail.1P+\beta_2GF.GP+\beta_3GA.GP+\beta_4Win..1.Goal.Game+\beta_5Win..2.Goal.Game+$$
+$$\beta_6PP.FOW.+\beta_7FOW.$$
+To establish a baseline for this model to compare later iterations against, a ANOVA test was conducted comparing against the null model.
+
+To evaluate this model a full model test was performed with the following hypothesis ($\alpha = 0.05$): \
+$H_0: \beta_1 = \beta_2 =...= \beta_{7} = 0$ \ 
+$H_a:$ at least one of $\beta_i$ in not zero $(i = 1,2,...7)$ \ 
+```{r, echo=F}
+test_model1<-lm(P~1, data=summary_nhl)
+anova(test_model1, red_model)
+```
+The ANOVA test result of the reduced first order model vs the null model showed am $F_{cal} = 333.38$ with a p-value $= < 2.2e-16 < \alpha = 0.05$. Therefore the null hypothesis was rejected and the it was concluded that at least on of $\beta_i \neq 0$. Therefore, this model was confirmed for further development. Additionally, the model had a high *Adjusted R Squared* value of *0.9873* and *RMSE* value of *1.54*.
+
+
+## 3.2 Diagnostic Tests of Initial First Order Model
+
+**Multicollinearity**
+
+A diagnostic check for multicollinearity of the reduced model with only significant independent variables include in the initial first order model was conducted. As seen in the pairwise scatter plot below, all correlations between the independent variables are less than 0.8, therefore no significant multicollinearity existed. In addition, as can also be seen from the VIF (variance inflation factor) summary below, all values were indicative of 'moderate' multicollinearity and were not severe enough to warrant corrective action (see table below). \ 
+
+
+|Independent Variable|VIF|
+|--------------------|---|
+|Win..Trail.1P|3.059498|  
+|GF.GP|2.248243|       
+|GA.GP|2.089224|       
+|Win..1.Goal.Game|2.896646|     
+|Win..2.Goal.Game|2.170170|          
+|PP.FOW.|1.736768|
+|FOW.|1.804385| 
+
+
+```{r, echo=F}
+
+#reduced model with no "wins.outshoot.opp" independent variable
+red_model<-lm(P~Win..Trail.1P+GF.GP+GA.GP+Win..1.Goal.Game+Win..2.Goal.Game+
+                PP.FOW.+FOW.,data=summary_nhl)
+
+subsetsummary<-subset(summary_nhl, 
+                      select = c("P","Win..Trail.1P","GF.GP","GA.GP",
+                                 "Win..1.Goal.Game", "Win..2.Goal.Game",
+                                 "PP.FOW.", "FOW."))
+
+#evaluating multicollinearity of our first order model with only significant 
+#independent variables using ggpair plot
+library(GGally)
+ggpairs(subsetsummary,lower = list(continuous = "smooth_loess", 
+                                   combo = "facethist", discrete = "facetbar", 
+                                   na = "na"))
+```
+```{r, echo=F}
+#evaluating multicollinearity of our first order model with only 
+#significant independent variables using VIF (variance inflation factor)
+library(car)
+red_model<-lm(P~Win..Trail.1P+GF.GP+GA.GP+Win..1.Goal.Game+
+                Win..2.Goal.Game+PP.FOW.+FOW.,data=summary_nhl) 
+                #only use significant variables
+```
+**Normality**
+
+To test the normality assumtion for the initial first order model, a Q-Q plot was constructed and a Shapiro-Wilk normality test was performed ($\alpha = 0.05$). \
+
+Shapiro-Wilk normality test hypothesis: \
+$H_0:$ the sample data are significantly normally distributed \
+$H_a:$ the sample data are not significantly normally distributed \
+```{r, echo=F}
+#check for normality with the Shapiro-Wilk normality test
+shapiro.test(residuals(red_model))
+qplot(residuals(red_model),
+      geom="histogram",
+      binwidth = 0.5,
+      main = "histogram or residules",
+      xlab = "residules", color="red",
+      fill=I("blue"))
+```
+
+With a p-value = 0.9371 > 0.05 the Shapiro-Wilk normality test failed to reject the null hypothesis and therefore the normality assumption held for the model. This was confirmed from the Q-Q plot as the residuals tended to follow the normal distribution line (see plot below). \ 
+
+
+**Linearity and Homoscedasticity**
+
+Residuals vs Fitted and Scale vs Location plots were created to confirm the linearity and homoscedasticity assumptions. From these plots, the Residuals values did not appear to increase as Fitted Values increased and no apparent pattern was apparent. Confirmation of the homoscedacity assumption was made via Breusch Pagan test. \
+
+Hypothesis for studentized Breusch-Pagan test: \
+
+H0: heteroscedasticity is not present (homoscedasticity) \
+HA: heteroscedasticity is present \
+
+```{r, echo=F}
+
+library(zoo)
+red_model<-lm(P~Win..Trail.1P+GF.GP+GA.GP+Win..1.Goal.Game+
+                Win..2.Goal.Game+PP.FOW.+FOW.,data=summary_nhl)
+
+#Checking assumptions
+
+#check the homoscedasticity assumption with studentized Breusch-Pagan test
+library(lmtest)
+bptest(red_model)
+
+#check for linearity, normality and homoscedasticity with residual plots and QQ plot 
+par(mfrow=c(2,2))
+plot(red_model)
+
+#check for normality with the Shapiro-Wilk normality test
+shapiro.test(residuals(red_model))
+
+```
+With a p-value = 0.3232 > 0.05 the null hypothesis was not rejected and therefore the data appeared to exhibit homoscedasticity. \
+
+
+## 3.3 Testing Interaction and Higher Order Terms
+
+**Interacting Terms**
+
+In order to explore improvement of the model, an interaction model was created. Individual coefficient tests were carried out to determine whether any significant interacting terms existed between the model independant variables.
+```{r, echo=F}
+redint_model<-lm(P~(Win..Trail.1P+GF.GP+GA.GP+Win..1.Goal.Game+Win..2.Goal.Game+PP.FOW.+FOW.)^2,data=summary_nhl)
+summary(redint_model)
+```
+Hypothesis: \
+$H_0: \beta_i = 0$ \
+$H_a: \beta_i \neq 0$ (i = 1, 2,..., 11) \
+
+As indicated within the summary listed above, the test failed to reject the null hypothesis for all of the interacting terms. Therefore, no interaction terms were carried forward for further model development.
+
+### Higher Order Terms
+
+Another aspect explored to improve the model was an exploration of potential significance in high order terms within the model. The *pairs* function was used in order to observe variables within the first order model. \
+
+```{r, echo=F}
+pairs(~P+Win..Trail.1P+GF.GP+GA.GP+Win..1.Goal.Game+Win..2.Goal.Game+
+                PP.FOW.+FOW.,data=summary_nhl, panel = panel.smooth)
+```
+\
+
+From the pairs plots, there did not appear to be any high order relationships between independent variables. However, to conclusive determine that quadratic terms did not improve the model, each independent variable was tested separately within the first order model to determine whether significant higher order relationships existed (see table below).
+
+
+```{r, echo=F}
+#Quadratic term: Win..Trail.1P
+high_model1<-lm(P~Win..Trail.1P+I(Win..Trail.1P^2)+GF.GP+GA.GP+Win..1.Goal.Game+Win..2.Goal.Game+PP.FOW.+FOW.,data=summary_nhl)
+#Quadratic term: GF.GP
+high_model2<-lm(P~Win..Trail.1P+GF.GP+I(GF.GP^2)+GA.GP+Win..1.Goal.Game+Win..2.Goal.Game+PP.FOW.+FOW.,data=summary_nhl)
+#Quadratic term: GA.GP
+high_model3<-lm(P~Win..Trail.1P+GF.GP+GA.GP+I(GA.GP^2)+Win..1.Goal.Game+Win..2.Goal.Game+PP.FOW.+FOW.,data=summary_nhl)
+#Quadratic term: Win..1.Goal.Game
+high_model4<-lm(P~Win..Trail.1P+GF.GP+GA.GP+Win..1.Goal.Game+I(Win..1.Goal.Game^2)+Win..2.Goal.Game+PP.FOW.+FOW.,data=summary_nhl)
+#Quadratic term: Win..2.Goal.Game
+high_model5<-lm(P~Win..Trail.1P+GF.GP+GA.GP+Win..1.Goal.Game+Win..2.Goal.Game+I(Win..2.Goal.Game^2)+PP.FOW.+FOW.,data=summary_nhl)
+#Quadratic term: PP.FOW.
+high_model6<-lm(P~Win..Trail.1P+GF.GP+GA.GP+Win..1.Goal.Game+Win..2.Goal.Game+PP.FOW.+I(PP.FOW.^2)+FOW.,data=summary_nhl)
+#Quadratic term: FOW.
+high_model7<-lm(P~Win..Trail.1P+GF.GP+GA.GP+Win..1.Goal.Game+Win..2.Goal.Game+PP.FOW.+FOW.+I(FOW.^2),data=summary_nhl)
+```
+Hypothesis: \
+$H_0: \beta_i = 0$ \
+$H_a: \beta_i \neq 0 (i = 1, 2,..., 11)$ \
+
+
+|Ind Var^2|p-value|
+|---------|-------|
+|Win..Trail.1P|0.6431|
+|GF.GP|0.4621|
+|GF.GP|0.462140|  
+|Win..1.Goal.Game|0.848535| 
+|Win..2.Goal.Game|0.385776|  
+|PP.FOW.|0.62022|   
+|FOW.|0.23973|  
+
+
+As indicated within summary Table 1 above, the test failed to reject the null hypothesis for all of the higher order terms. Therefore, no higher order terms were carried forward for further model development. \
+
+## 3.4 Identification of Outliers
+
+After conducting the above test on the model, including first order, interactions, and higher order terms, the resulting model was:
+$$Y = 75.1639-8.8585Win..Trail.1P+23.1414GF.GP-23.0781GA.GP+40.5657Win..1.Goal.Game+$$
+$$12.1657Win..2.Goal.Game+0.4100PP.FOW.-0.6094FOW.$$
+
+```{r, echo=F}
+
+red_model = lm(P~Win..Trail.1P+GF.GP+GA.GP+
+                Win..1.Goal.Game+Win..2.Goal.Game+PP.FOW.+FOW.,data=summary_nhl)
+```
+
+Next the data set was reviewed to determine whether any outliers existed. If any of the outliers were found, they would be considered for removal prior to model revision. The methods below were applied to identify potential outliers. \
+
+### a. Constant leverage plot
+
+```{r, echo=F}
+
+# identifying outliers graphically using Constant leverage plot
+plot(red_model, which = 5)
+
+```
+The plot of Leverage vs. Residuals indicated no influential data points. All data points were inside of the Cook’s distance lines (red dashed lines in figure above). \
+
+
+### b. Cook’s Distance
+
+Cook's distance $D_i$ was calculated and plotted to determine if any values had a strong influence on the estimated coefficients. Initially, 0.5 was used as the limit for $D_i$ to indicate strong influence. This did not return any potential outliers. 
+
+```{r, echo=F}
+#have Cook statistics larger than 0.5
+summary_nhl[cooks.distance(red_model) > 0.5,]
+plot(red_model,pch=18,col="red",which=c(4))
+```
+
+To explore whether a more sensitive threshold would provide potential outliers, a Cook's distance value of 4/n = 4/31 = 0.13 was also used. 
+```{r, echo=F}
+#have Cook statistics larger than 1
+cd <- summary_nhl[cooks.distance(red_model) > 0.13,]
+print("Teams with Cook statistics larger than 1:")
+cd[,1]
+```
+A Cook's distance threshold of 0.13 resulted in identification of 2 potential outliers within the data set. The Chicago Blackhawks and Ottawa Senators.
+
+
+### c. Leverage Plot
+
+A leverage plot was constructed to determine whether there were points within the dataset that exerted disproportional leverage (see plot below). For the test, the threshold leverage value used was: \
+
+$H_i > 2p/n = 2(8/31) = 0.5161$
+
+where $h_i$ is the leverage for the $i$th observation \
+p = the number of predictors \
+n = the number of the sample size \
+
+```{r, echo=F}
+
+lev=hatvalues(red_model) 
+
+p = length(coef(red_model)) 
+
+n = nrow(summary_nhl)
+
+outlier = lev[lev>(2*p/n)] 
+
+plot(rownames(summary_nhl),lev, main = "Leverage in summary_nhl Dataset", 
+     xlab="observation", ylab = "Leverage Value",
+     ylim = c(0,1.5)) 
+
+abline(h = 2*p/n, lty = 1) 
+```
+
+From the leverage plot, it was determined that there were no high leverage points. \
+
+A new model was constructed to confirm that removal of the influential points Chicago Blackhawks and Ottawa Senators would not improve the model. \
+
+```{r, echo=F}
+red_model1 = lm(P~Win..Trail.1P+GF.GP+GA.GP+
+                Win..1.Goal.Game+Win..2.Goal.Game+PP.FOW.+FOW.,data=summary_nhl[-c(20,31),])
+summary(red_model1)
+```
+After removal of the influential points Chicago Blackhawks and Ottawa Senators from the data set, the model was improved slightly. The new $R^2$ = 0.9893 (> 0.9873) and RMSE = 1.35 (< 1.54). However, given the low leverage of these points (below the 2(p/n) threshold) and the relatively small sample size within the dataset (n=31), it was determined that these data points would be retained while further developing the model.
+
+
+## 3.5 Added Categorical Variables
+During project planning, the project team identified the possibility of testing 2 categorical variables for significance and potential model improvement. It was hypothesized that including the NHL Conference (East or West) within which each team plays, would be a significant variable that may increase the predictive power of the model. This hypothesis was based on the anecdotal experience of the project domain expertise, believing that within conference variance would be lower and between conference variance would be significant meaning that inclusion in the model would reduce the overall model RMSE. Secondly, the project team hypothesized that teams having made the playoffs (top 16 teams in the league) in the previous season (2017), would be a significant predictor of points in the 2018 season. Therefore, these additional categorical independent variables were added to the model to test for significance.
+
+```{r, echo=F}
+red_model2 = lm(P~factor(Conf)+factor(X17Playoffs)+Win..Trail.1P+GF.GP+GA.GP+
+                Win..1.Goal.Game+Win..2.Goal.Game+PP.FOW.+FOW.,data=summary_nhl)
+summary(red_model2)
+```
+The hypothesis for these additional categorical variables was ($\alpha = 0.05$): \
+$H_0: \beta_i = 0$ \
+$H_a: \beta_i \neq 0 (i = 1, 2)$ \
+
+Results of the model with these 2 additional categorical variables show that the null hypothesis could not be rejected (Conference p-value = 0.5792, 2017 Playoffs p-value = 0.7116). These categorical variables were not significant and were therefore not included in the final model.
+
+
+## 3.7 Final Model Summary
+```{r, echo=F}
+red_model1 = lm(P~Win..Trail.1P+GF.GP+GA.GP+Win..1.Goal.Game+Win..2.Goal.Game+PP.FOW.+FOW.,data=summary_nhl)
+```
+From summary of the final model $R^2_{adj}$ = 0.9873 indicating that 98.73% of the variation of the dependent variable which is "P" or points accumulated results from the model independent variables. RMSE can be interpreted as the standard deviation of the unexplained variance. The final model contains only Win..Trail.1P, GF.GP, GA.GP ,Win..1.Goal.Game, Win..2.Goal.Game, PP.FOW. and FOW as predictors has an RMSE of 1.54. This corroborates our previous conclusion that reduced model was more accurate than the initial model (RMSE = 2.181).
+
+The final model is therefore:
+
+$$Points = 75.1639 - 8.8585Win..Trail.1P+23.1414GF.GP - 23.0781GA.GP+40.5657Win..1.Goal.Game+$$
+$$12.1657 Win..2.Goal.Game +0.4100PP.FOW - 0.6094FOW.$$
+
+The final model includes a total of 7 significant independent variables. These were interpreted as following: \
+
+
+${\beta_{Win..Trail.1P}} = -8.8585$ \
+
+For every additional 1% percentage of wins after trailing period 1, the number of season points is reduced by approximately 8.8585. \
+
+
+${\beta_{GF.GP}} = 23.1414$ \
+
+For every additional 1 goal for per game played, the number of season points is increased by approximately 23.1414. \
+
+
+${\beta_{GA.GP}} = -23.0781$ \
+
+For every additional 1 goal against per game played, the number of season points is decreased by approximately 23.0781. \
+
+
+${\beta_{Win..1.Goal.Game}} = 40.5657$ \
+
+For every additional 1% percentage of wins by 1 goal, the number of season points is increased by approximately 40.5657. \
+
+
+${\beta_{Win..2.Goal.Game}} = 12.1657$ \
+
+For every additional 1% percentage of wins by 2 goals, the number of season points is increased by approximately 12.1657. \
+
+
+${\beta_{PP.FOW}} = 0.4100$ \
+
+For every additional 1% in powerplay faceoffs success, the number of season points is increased by approximately 0.4100. \
+
+
+${\beta_{FOW}} = -0.6094$ \
+
+For every additional 1% in overall faceoffs success, the number of season points is decreased by approximately 0.6094. \
+
+\newpage 
+
+# 4.0 Discussion and Conclusion
+
+The final model showed significant results using 7 team statistics to predict points for NHL teams during the 2018 hockey season. In order to test and use the final model, the project team determined that a validation against the 2019 season results and a prediction of 2021 results would be useful.
+
+## 4.1 Model Validation 
+
+Player team changes, rule changes and other changes that impact the nature or the 'zeitgeist' of hockey (i.e., "how the game is played") are thought to be important in prediction of hockey outcomes because domain expertise tells us that various aspect of the professional game drift dynamically over time. For example, the 1980's are well regarded as an era of extremely high scoring exciting hockey; while the 2000's are notorious doldrums of the defensive "clutch and grab" style induced by the defensive neutral zone "trap" tactic. The 2019 season was therefore selected to test model results because it was chronologically close to the 2018 data on which the model was based. This was predicted to minimize these confounding temporal effects.
+
+To test the model, a prediction of points for each team was made based on 2019 season statistics and this was compared to actual points accumulated over the season. See the table of actual and predicted points below. Also presented are a histogram of actual points results vs. predicted results and a plot comparing actual vs. predicted points for each team. 
+
+```{r, echo=F}
+###comparison to 2019/20 actual results
+val<-read.csv("2019data.csv")
+val$ExpP<-NA
+for(i in 1:31) {
+  val$ExpP[i] = (75.1639-8.8585*val$Win..Trail.1P[i]+23.1414*val$GF.GP[i]-23.0781*val$GA.GP[i]+40.5657*val$Win..1.Goal.Game[i]+12.1657*val$Win..2.Goal.Game[i]+0.4100*val$PP.FOW[i]-0.6094*val$FOW[i])
+}
+
+valdf<-data.frame(cbind(val$Team, val$P, round(val$ExpP, 0)))
+colnames(valdf)<-c("Team", "Points", "Predicted")
+
+valdf
+hist(val$P, xlim=c(50,130), breaks=8, main="Histogram of Actual Points (2019/20)", xlab="Points")
+```
+
+```{r, echo=F}
+hist(val$ExpP, main="Histogram of Predicted Points (2019/20)", xlab="Points")
+```
+
+```{r, echo=F}
+plot<-lm(valdf$Points~valdf$Predicted)
+plot(valdf$Points~valdf$Predicted,
+     xlab = "Predicted Points",
+     ylab = "Observed Points",
+     main = "2019 Actual(observed) vs. Modeled(predicted) Points")
+
+###prediction of 2021/22 points
+pred<-read.csv("2021data.csv")
+pred$ExpP<-NA
+for(i in 1:31) {
+  pred$ExpP[i] = (75.1639-8.8585*pred$Win..Trail.1P[i]+23.1414*pred$GF.GP[i]-23.0781*pred$GA.GP[i]+40.5657*pred$Win..1.Goal.Game[i]+12.1657*pred$Win..2.Goal.Game[i]+0.4100*pred$PP.FOW.[i]-0.6094*pred$FOW[i])
+}
+
+```
+\
+
+As displayed most predominantly in the table of values, the results have a relatively high amount of difference between predicted vs. actual points for some teams, even if the overall result seem adequate when plotting the observed vs. predicted points. Analysis of variance and further validation against other season statistics is suggested for future study, however this was beyond the scope of the current work. A reasonable amount of agreement between predicted and observed points over the 2019 season is obtained as the model has predicted the points total for 11 of the teams during the 2019 NHL season within $\pm$ 10 points. \  
+
+## 4.2 Model Predictions
+
+In order to attempt a present day prediction, the model was applied to the current NHL season which is approximately 25% complete. This step serves as another validation step by comparing actual vs. predicted values for the season thus far and also allows us to forecast the points of each team by the end of the current NHL season's 82 game schedule. 
+
+```{r, echo=F}
+preddf<-data.frame(cbind(pred$Team, round(pred$P, 0), round(pred$ExpP*(pred$GP/82), 0)))
+colnames(preddf)<-c("Team", "Points", "Predicted")
+preddf
+hist(pred$P, xlim=c(10,40), breaks=4, main="Histogram of Current Points (2021/22)", xlab="Points")
+```
+
+```{r, echo=F}
+hist(pred$ExpP*(pred$GP/82), main="Histogram of Predicted Current Points (2021/22)", xlab="Points")
+```
+
+```{r, echo=F}
+plot(preddf$Points~preddf$Predicted,
+     xlab = "Predicted Points",
+     ylab = "Observed Points",
+     main = "2021 Actual(observed) vs. Modeled(predicted) Points")
+
+pred2df<-data.frame(cbind(pred$Team, round(pred$P/(pred$GP/82), 0), round(pred$ExpP, 0)))
+colnames(pred2df)<-c("Team", "Points", "Predicted")
+pred2df
+hist(pred$P/(pred$GP/82), xlim=c(20,140), breaks=4, main="Histogram of Projected Points (2021/22)", xlab="Points")
+```
+
+```{r, echo=F}
+hist(pred$ExpP, main="Histogram of Predicted Points (2021/22)", xlab="Points")
+```
+
+```{r, echo=F}
+plot(pred2df$Points~pred2df$Predicted,
+     xlab = "Predicted Points",
+     ylab = "Observed Points",
+     main = "2021 Projected(observed) vs. Modeled(predicted) Points")
+
+```
+\
+
+Results from model predicted vs actual and forecast results for the 2021/22 season thus far are provided above. The first table, histogram and scatter plot set provide the results of modeled points based on the model independent variables for the season to date. We can see that there is excellent agreement between the results of the modeled independent parameters predicted points from the model and actual points accumulated by each team. \
+
+The points totals, both actual and predicted were then pro-rated over the 82 game season to develop a forecast based on current points accumulation rate vs modeled points accumulation rate based on the model. This allows for identification of teams in some interesting categories: \
+
+*Top 3 teams with highest predicted end of season points totals:* \
+Edmonton Oilers (current points = 34, predicted total = 133) \
+Florida Panthers (36, 127) \
+Minnesota Wild (35, 124) \
+
+*Three teams currently over-performing:* \
+Tampa Bay Lightning (30, 101) \
+New York Rangers (33, 113) \
+Washington Capitals (34, 107) \
+
+*Three teams under-performing:* \
+Boston Bruins (24, 112) \
+San Jose Sharks (27, 104) \
+Vegas Golden Knights (24, 97) \
+
+*Three teams predicted to finish last in points by end of season:* \
+Arizona Coyotes (12, 49) \
+New York Islanders (13, 49) \
+Montréal Canadiens (14, 38) \
+
+
+## 4.3 Discussion 
+
+The final model includes 3 predictor variables connected to situational wins ((1) wins when leading after 1 period, (2) wins by 1 goal margin and (3) wins by 2 goal margin); goals for per game and goals against per game; and, faceoff win percentage and powerplay faceoff win percentage. The following discussion provides some theory regarding the significant variables selected in the final model: \
+
+**Situational Wins** \
+It is perhaps not surprising that independent variables regarding game wins were found to be significant in predicting season points accumulation, as wins are the primary achievement for which points are awarded in the NHL (the other being overtime losses). It is the coefficients of each variable that allow us to contemplate relationships between each win metric and season points result. \
+
+*Wins when leading after 1 period* was found to have a significant ($\alpha$ = 0.1) linear correlation with season points which was somewhat surprising as the variable was included because domain expertise tells us that the ability to come from behind may be an important indicator of team resilience. However, while this anecdotal narrative may be relevant for some teams (and makes for exciting hockey from the perspective of the fan), when considering every team in the league, the propensity to be behind during a game, may be an indication of a less successful team. Therefore, we may expect a the statistic *percentage of games trailing after 1 period* to be a more direct indicator of this effect. This is a suggestion for future investigation. \
+
+**Victory Goal Margin** \
+*Percentage of wins by 1 and 2 goal margins* were both determined to be positively linearly correlated with points. Again, while it is not surprising that wins are correlated with points, it is more instructive that wins by a 3 goal margin was not also significant. This indicates that large margin victories are not necessarily a indication of highly successful teams. Furthermore, the coefficient for percentage of wins by 1 goal was found to be over 3 times higher than percentage of wins by 2 goal games (40.5657 vs. 12.1657). This supports the conclusion that the ability of a team to win, by whatever margin, may be more important than wins by larger margins.
+
+*Goals for and goals against* were both linearly correlated with points positively and negatively, respectively. Again, this is not a surprising result and the coefficient for each is nearly equal (23.1414 vs. -23.0781). As with the above conclusion regarding margin of victory, this may indicate that more successful teams focus more on winning than on winning by large margins and therefore increasing goals for to goals against differential is not nescesarily an indicator of a highly successful team.
+
+**Faceoff Win Percentage** \
+*Faceoff win and power play faceoff win percentage* were found to be negatively and positively correlated with points, respectively. The result that total faceoff win percentage is negatively correlated with points is another surprising result that deserves further study. Intuitively, domain expertise tells us that teams with higher faceoff percentage would command a larger proportion of puck possession which is theorized to lead to team success and therefore points. However, this result of negatively correlated total faceoff win percentage may indicate that successful teams either prioritize other means of obtaining possession. This unexpected result may also be related to the contemporary zeitgeist of the NHL in 2018; faceoff win percentage may have been an indicator of other nuisance or confounding effects related to the specific nature of the professional game of hockey during that season. Further study would shed more light on this interesting result. In contrast, the result that powerplay faceoff win percentage is positively correlated with points is intuitive as the powerplay game situation is time limited (usually 2 minutes long) and begins in the opposing team's zone. In the powerplay situation, it seems that faceoff success playa a role in team success.
+
+As described in Section 1, shots on goal or shooting percentage were expected to be a significant predictor of points since the opportunities to score goals comes directly from “shooting”, however this was not found to be the case. This surprising result should be the motivation for further study which may include the an exploration of advanced hockey analytical metrics such as 'CORSI' and 'Fenwick' which are derived from shot attempts rather than simply shots or shooting success (Lee 2021, The Athletic 2021). The GF 5v5 and GA 5v5 variables were another set that were expected but did not prove a significant predictor within the model. This may indicate a higher priority on powerplay than previously thought. This too deserves further study.
+
+## 4.4 Conclusion
+The objective of the project was to use 38 independent variables, chosen with domain expertise from available NHL.com team stats, to develop a model to predict team points for the 2018 NHL season. The independent variables were checked for interaction and higher order relationships before finalization of a best model using only first order terms. This final model was diagnosed for against the linearity, homoscadasticity, normality and equal variance assumption before outliers were identified and a model with their removal tested against the final model. No outliers were removed after this analysis. The resulting model was validated by comparison to the 2019 actual results and 2021 season results to date. Finally, the model was used to predict the results of the current 2021/22 season including prediction of the Edmonton Oilers as the President's Trophy champions with a predicted final total of 133 points. This would be 1 point higher than the all-time record set by the 1976/77 Montréal Canadiens. \
+
+Based the analysis in Section 4.3, the project team proposes that percentage of time in lead vs. trailing and situational puck possession metrics beyond faceoff wins be explored for improvement of the model. In addition, advanced shot attempt statistics and additional exploration of powerplay contribution to team success should be undertaken.\ 
+
+\newpage
+
+# 5.0 References
+National Hockey League (NHL). Team Statistics. http://www.nhl.com/stats/teams. Accessed on Nov 27, 2021.
+
+Lee, C. Advanced Hockey Stats 101: Corsi (part 1 of 4). https://medium.com/hockey-stats/advanced-hockey-stats-101-corsi-part-1-of-4-29d0a9fb1f95#:~:text=Corsi%20stats%3A%20CF%2C%20CA%2C%20CF%25%20and%20CF%25%20rel&text=This%20is%20a%20relative%20measure,an%20elite%20goal%20scorer%20alongside. Accessed on Nov 27, 2021.
+
+The Athletic. An advanced stat primer: Understanding basic hockey metrics. https://theathletic.com/121980/2017/10/09/an-advanced-stat-primer-understanding-basic-hockey-metrics/. Accessed on Nov 27, 2021.
+
+\newpage
+
+# Appendix
+List and Descriptions of All Initial Variables
+```{r, echo=F}
+legend<-read.csv("Legend-Table 1.csv")
+legend
+```
+
